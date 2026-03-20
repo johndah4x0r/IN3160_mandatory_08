@@ -16,7 +16,7 @@ VHDL_SOURCES += $(PWD)/../src/*.vhd*
 SIM_ARGS +=--wave=$(TOPLEVEL).ghw
 
 # MODULE is the basename of the Python test file
-MODULE = tb_pwm
+MODULE = tb_$(TOPLEVEL)
 
 # include cocotb's make rules to take care of the simulator setup
 include $(shell cocotb-config --makefiles)/Makefile.sim
