@@ -13,17 +13,17 @@ entity self_test is
     );
 
     port (
-        clk         : in std_ulogic;
-        reset       : in std_ulogic;
-        duty_cycle  : out std_logic_vector(DATA_WIDTH-1 downto 0);
-        done        : out std_ulogic;
+        clk         : in std_ulogic;                                -- external clock
+        reset       : in std_ulogic;                                -- active reset
+        duty_cycle  : out std_logic_vector(DATA_WIDTH-1 downto 0);  -- duty cycle (two's complement)
+        done        : out std_ulogic;                               -- done flag
 
         -- ports for side-loading in simulations
-        data_in     : in std_logic_vector(DATA_WIDTH-1 downto 0);
-        addr        : in unsigned(ADDR_WIDTH-1 downto 0);
-        we          : in std_ulogic
+        data_in     : in std_logic_vector(DATA_WIDTH-1 downto 0);   -- input data
+        addr        : in unsigned(ADDR_WIDTH-1 downto 0);           -- ROM address
+        we          : in std_ulogic                                 -- write-enable flag
     );
-end self_test;
+end entity self_test;
 
 architecture rtl of self_test is
     constant ROM_SIZE : integer := 2**ADDR_WIDTH;
@@ -102,4 +102,4 @@ begin
             end if;
         end if;
     end process;
-end rtl;
+end architecture rtl;

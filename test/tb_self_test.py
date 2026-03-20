@@ -30,7 +30,7 @@ async def main_test(dut):
 
     # Populate ROM (holding the main execution processes)
     dut._log.info("Populating ROM...")
-    with open("../src/self_test_rom.hex") as f:
+    with open("../src/rom/self_test_rom.hex") as f:
         lines = [int(line.strip(), 16) for line in f if line.strip()]
 
     for i, val in enumerate(lines):
