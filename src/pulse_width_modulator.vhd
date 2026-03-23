@@ -3,10 +3,16 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity pulse_width_modulator is
+    generic (
+        MIN_OFF         : std_ulogic_vector(19 downto 0) := x"000FF";
+        MIN_ON          : std_ulogic_vector(19 downto 0) := x"00FF0";
+        MAX_ON          : std_ulogic_vector(19 downto 0) := x"FF000"
+    );
+
     port(
-        mclk, reset  : in std_ulogic;
-        duty_cycle   : in signed(7 downto 0);
-        dir, en      : out std_ulogic
+        mclk, reset     : in std_ulogic;
+        duty_cycle      : in signed(7 downto 0);
+        dir, en         : out std_ulogic
     );
 end entity pulse_width_modulator;
 
@@ -31,9 +37,9 @@ begin
             reset => reset,
             mea_req => '0',
             setpoint => abs_duty,
-            min_off => x"000FF",
-            min_on => x"00FF0",
-            max_on => x"FF000",
+            min_off => MIN_OFF,
+            min_on => MIN_ON,
+            max_on => MAX_ON,
             mea_ack => unused,
             pdm_pulse => gen_pulse
         );

@@ -5,7 +5,7 @@ import cocotb
 from cocotb.triggers import RisingEdge, Timer
 from cocotb.clock import Clock
 
-TIME_UNIT = "us"
+TIME_UNIT = "ns"
 CLOCK_PERIOD = 10
 
 
@@ -43,6 +43,7 @@ async def main_test(dut):
     dut.we.value = 0
 
     # Wait...
+    dut._log.info("Applying stored sequence...")
     while dut.done.value != 1:
         await RisingEdge(dut.clk)
 
