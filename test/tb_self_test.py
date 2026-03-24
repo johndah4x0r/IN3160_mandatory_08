@@ -5,7 +5,7 @@ import cocotb
 from cocotb.triggers import RisingEdge, Timer
 from cocotb.clock import Clock
 
-TIME_UNIT = "ns"
+TIME_UNIT = "us"
 CLOCK_PERIOD = 10
 
 

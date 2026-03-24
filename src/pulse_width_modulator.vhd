@@ -24,8 +24,16 @@ architecture behavioral of pulse_width_modulator is
     type pwm_state_t is (REVERSE_IDLE, REVERSE, FORWARD_IDLE, FORWARD);
     signal pwm_state, next_pwm_state : pwm_state_t;
 
-    signal abs_duty_calc : signed(7 downto 0);
-    signal req_dir : std_ulogic;
+    signal abs_duty_calc : std_ulogic_vector(7 downto 0);
+
+    function calc_abs(x : signed) return std_ulogic_vector is
+    begin
+        if x < 0 then
+            return std_ulogic_vector((not x) + 1);
+        else
+            return std_ulogic_vector(x);
+        end if;
+    end function;
 begin
     pdm: entity work.pdm(rtl)
         generic map (
@@ -55,7 +63,7 @@ begin
         end if;
     end process;
 
-    inner: process(pwm_state, req_dir)
+    inner: process(pwm_state, duty_cycle)
     begin
         -- make sure `next_pwm_state` isn't left undefined
         next_pwm_state <= pwm_state;
@@ -65,22 +73,19 @@ begin
         -- state must be entered)
         case pwm_state is
             when REVERSE_IDLE =>
-                next_pwm_state <= REVERSE when req_dir = '0' else FORWARD_IDLE;
+                next_pwm_state <= REVERSE when duty_cycle < 0 else FORWARD_IDLE;
             when REVERSE =>
-                next_pwm_state <= REVERSE when req_dir = '0' else REVERSE_IDLE;
+                next_pwm_state <= REVERSE when duty_cycle < 0 else REVERSE_IDLE;
             when FORWARD_IDLE =>
-                next_pwm_state <= FORWARD when req_dir = '1' else REVERSE_IDLE;
+                next_pwm_state <= FORWARD when duty_cycle > 0 else REVERSE_IDLE;
             when FORWARD =>
-                next_pwm_state <= FORWARD when req_dir = '1' else FORWARD_IDLE;
+                next_pwm_state <= FORWARD when duty_cycle > 0 else FORWARD_IDLE;
         end case;
     end process;
 
     -- (calculation of duty cycle is combinational)
-    abs_duty_calc <= duty_cycle when duty_cycle > 0 else (not duty_cycle) + 1;
-    abs_duty <= std_ulogic_vector(abs_duty_calc(6 downto 0)) & "0000000000000";
-
-    -- (I don't know how to use `signed`...)
-    req_dir <= not duty_cycle(7);
+    abs_duty_calc <= calc_abs(duty_cycle);
+    abs_duty <= abs_duty_calc(6 downto 0) & "0000000000000";
 
     -- apply Moore outputs
     en <= gen_pulse when (pwm_state = REVERSE or pwm_state = FORWARD) else '0';

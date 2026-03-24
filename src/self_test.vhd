@@ -15,7 +15,7 @@ entity self_test is
     port (
         clk         : in std_ulogic;                                -- external clock
         reset       : in std_ulogic;                                -- active reset
-        duty_cycle  : out std_logic_vector(DATA_WIDTH-1 downto 0);  -- duty cycle (two's complement)
+        duty_cycle  : out signed(DATA_WIDTH-1 downto 0);            -- duty cycle (two's complement)
         done        : out std_ulogic;                               -- done flag
 
         -- ports for side-loading in simulations
@@ -90,7 +90,7 @@ begin
                 else
                     slave_counter <= 0;
                     if index < DYN_ROM_SIZE then
-                        duty_cycle <= ROM(index);
+                        duty_cycle <= signed(ROM(index));
 
                         -- FIXME: this might make bounds violations look "legal"
                         index <= index + 1;
