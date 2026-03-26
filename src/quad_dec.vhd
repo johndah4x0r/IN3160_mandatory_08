@@ -15,65 +15,60 @@ architecture behavioral of quad_dec is
     signal q_state, next_q_state : q_state_t;
     signal err : std_ulogic;
 begin
-    clocked: process(clk)
+    transition: process(q_state, next_q_state)
+    begin
+        err <= '0';
+        pos_inc <= '0';
+        pos_dec <= '0';
+
+        case q_state is
+            when S0 =>
+                case next_q_state is
+                    when S1 => pos_inc <= '1';
+                    when S3 => pos_dec <= '1';
+                    when S_RESET => err <= '1';
+                    when others => null;
+                end case;
+
+            when S1 =>
+                case next_q_state is
+                    when S0 => pos_dec <= '1';
+                    when S2 => pos_inc <= '1';
+                    when S_RESET => err <= '1';
+                    when others => null;
+                end case;
+
+            when S2 =>
+                case next_q_state is
+                    when S1 => pos_dec <= '1';
+                    when S3 => pos_inc <= '1';
+                    when S_RESET => err <= '1';
+                    when others => null;
+                end case;
+
+            when S3 =>
+                case next_q_state is
+                    when S0 => pos_inc <= '1';
+                    when S2 => pos_dec <= '1';
+                    when S_RESET => err <= '1';
+                    when others => null;
+                end case;
+            when others => null;
+        end case;
+    end process;
+
+    state_reg: process(clk)
     begin
         if rising_edge(clk) then
             if reset = '1' then
                 q_state  <= S_RESET;
-                err      <= '0';
-                pos_inc  <= '0';
-                pos_dec  <= '0';
             else
-                -- default: one-cycle pulses
-                err      <= '0';
-                pos_inc  <= '0';
-                pos_dec  <= '0';
-
-                if q_state /= next_q_state then
-                    if next_q_state = S_RESET then
-                        err <= '1';
-                    else
-                        case q_state is
-                            when S0 =>
-                                case next_q_state is
-                                    when S1 => pos_inc <= '1';
-                                    when S3 => pos_dec <= '1';
-                                    when others => null;
-                                end case;
-
-                            when S1 =>
-                                case next_q_state is
-                                    when S0 => pos_dec <= '1';
-                                    when S2 => pos_inc <= '1';
-                                    when others => null;
-                                end case;
-
-                            when S2 =>
-                                case next_q_state is
-                                    when S1 => pos_dec <= '1';
-                                    when S3 => pos_inc <= '1';
-                                    when others => null;
-                                end case;
-
-                            when S3 =>
-                                case next_q_state is
-                                    when S0 => pos_inc <= '1';
-                                    when S2 => pos_dec <= '1';
-                                    when others => null;
-                                end case;
-
-                            when others =>
-                                null;
-                        end case;
-                    end if;
-                end if;
-
                 q_state <= next_q_state;
             end if;
         end if;
     end process;
 
-    inner: process(q_state, ab)
+    next_state: process(q_state, ab)
     begin
         -- note that `ab` uses Gray encoding
         --

@@ -6,26 +6,28 @@ entity self_test_unit is
     generic (
         DATA_WIDTH      : integer := 8;             -- data width in bits
         ADDR_WIDTH      : integer := 6;             -- address width in bits
-        MASTER_LIMIT    : integer := 1000;          -- master limit value (use reasonable values in simulations)
-        SLAVE_LIMIT     : integer := 3;             -- slave limit value
-        DISP_LIMIT      : integer := 100            -- display limit value            
+        MASTER_LIMIT    : integer := 50_000_000;    -- master limit value (2 Hz - use reasonable values in simulations)
+        SLAVE_LIMIT     : integer := 6;             -- slave limit value (0.5 s * 6 = 3 seconds)
+        DISP_LIMIT      : integer := 1_000_000;      -- display limit value (200 Hz, interlaced)
+
+        MIN_OFF         : std_ulogic_vector(19 downto 0) := x"0000A";
+        MIN_ON          : std_ulogic_vector(19 downto 0) := x"0000A";
+        MAX_ON          : std_ulogic_vector(19 downto 0) := x"000C8"
     );
 
     port (
         -- bare minimum ports
         clk, reset      : in std_ulogic;
-        a, b            : in std_ulogic;
-        done            : out std_ulogic;           -- port primarily used for simulation
+        ab              : in std_ulogic_vector(1 downto 0);
+        done, hb        : out std_ulogic;           -- port primarily used for simulation
         dir, en         : out std_ulogic;
 
         -- ports for display control
         abcdefg         : out std_ulogic_vector(6 downto 0);
         c               : out std_ulogic;
 
-        -- ports for side-loading in simulations
-        data_in         : in std_logic_vector(DATA_WIDTH-1 downto 0);
-        addr            : in unsigned(ADDR_WIDTH-1 downto 0);
-        we              : in std_ulogic
+        -- ports to view pulses
+        pulse           : out std_ulogic_vector(1 downto 0)
     );
 end entity self_test_unit;
 
@@ -35,6 +37,10 @@ architecture structural of self_test_unit is
     signal in_bus, dec_bus  : std_ulogic_vector(1 downto 0);
     signal v_bus            : signed(7 downto 0);
     signal abs_v            : std_ulogic_vector(7 downto 0);
+
+    signal data_in_i        : std_logic_vector(DATA_WIDTH-1 downto 0);
+    signal addr_i           : unsigned(ADDR_WIDTH-1 downto 0);
+    signal we_i             : std_ulogic;
 
     function calc_abs(x : signed) return std_ulogic_vector is
     begin
@@ -49,9 +55,9 @@ begin
         -- change values, or omit the mapping outright,
         -- upon synthesis
         generic map (
-            MIN_OFF => x"0000A",
-            MIN_ON => x"0000A",
-            MAX_ON => x"000C8"
+            MIN_OFF => MIN_OFF,
+            MIN_ON => MIN_ON,
+            MAX_ON => MAX_ON
         )
 
         port map (
@@ -64,6 +70,7 @@ begin
     
     seq_gen: entity work.self_test(rtl)
         generic map (
+            SIM_MODE => false,
             DATA_WIDTH => DATA_WIDTH,
             ADDR_WIDTH => ADDR_WIDTH,
             MASTER_LIMIT => MASTER_LIMIT,
@@ -75,9 +82,10 @@ begin
             reset => reset,
             duty_cycle => seq,
             done => done,
-            data_in => data_in,
-            addr => addr,
-            we => we
+            hb => hb,
+            data_in => data_in_i,
+            addr => addr_i,
+            we => we_i
         );
     
     out_sync: entity work.synch(rtl)
@@ -99,7 +107,7 @@ begin
 
         port map (
             clk => clk,
-            n => a & b,
+            n => ab,
             n_synch => in_bus
         );
     
@@ -113,6 +121,10 @@ begin
         );
     
     vr: entity work.velocity_reader(rtl)
+        generic map (
+            TEN_MS_COUNT => 1_000
+        )
+
         port map (
             mclk => clk,
             reset => reset,
@@ -139,4 +151,10 @@ begin
     -- perform combinational calculation
     -- of velocity magnitude
     abs_v <= calc_abs(v_bus);
+    pulse <= dec_bus;
+
+    -- tie off sideloading ports
+    data_in_i <= (others => '0');
+    addr_i <= (others => '0');
+    we_i <= '0';
 end architecture structural;

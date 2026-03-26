@@ -79,7 +79,7 @@ begin
     begin
         if rising_edge(clk) then
             -- reset should be synchronous
-            if reset then
+            if reset = '1' then
                 state <= OFF_S;
                 timer <= to_integer(unsigned(min_off));
             else
