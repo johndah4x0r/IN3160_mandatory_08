@@ -6,9 +6,9 @@ entity self_test_unit is
     generic (
         DATA_WIDTH      : integer := 8;             -- data width in bits
         ADDR_WIDTH      : integer := 6;             -- address width in bits
-        MASTER_LIMIT    : integer := 50_000_000;    -- master limit value (2 Hz - use reasonable values in simulations)
+        MASTER_LIMIT    : integer := 5_000;    -- master limit value (2 Hz - use reasonable values in simulations)
         SLAVE_LIMIT     : integer := 6;             -- slave limit value (0.5 s * 6 = 3 seconds)
-        DISP_LIMIT      : integer := 1_000_000;      -- display limit value (200 Hz, interlaced)
+        DISP_LIMIT      : integer := 100;      -- display limit value (200 Hz, interlaced)
 
         MIN_OFF         : std_ulogic_vector(19 downto 0) := x"0000A";
         MIN_ON          : std_ulogic_vector(19 downto 0) := x"0000A";
@@ -122,7 +122,7 @@ begin
     
     vr: entity work.velocity_reader(rtl)
         generic map (
-            TEN_MS_COUNT => 1_000
+            TEN_MS_COUNT => 100
         )
 
         port map (
