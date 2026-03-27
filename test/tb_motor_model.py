@@ -44,18 +44,25 @@ async def doc_state(dut):
     global TS_LIMIT, motor_speed, ts_ctr
 
     f = open("motor_model_state.csv", "w+")
-    f.write("'index','cycle','dir','en','motor_speed'\n")
+    f.write("'index','cycle','dir','en','velocity','motor_speed'\n")
 
     inner_ctr = 0
     while ts_ctr < TS_LIMIT:
-        v_dir, v_en = 0, 0
+        v_dir, v_en, v_velocity = 0, 0, 0
 
         try:
-            v_dir, v_en = int(dut.dir.value), int(dut.en.value)
+            v_dir, v_en, v_velocity = (
+                int(dut.dir.value),
+                int(dut.en.value),
+                int(dut.v_bus.value),
+            )
         except:
             pass
 
-        f.write("%d,%d,%d,%d,%.6f\n" % (inner_ctr, ts_ctr, v_dir, v_en, motor_speed))
+        f.write(
+            "%d,%d,%d,%d,%d,%.6f\n"
+            % (inner_ctr, ts_ctr, v_dir, v_en, v_velocity, motor_speed)
+        )
 
         await RisingEdge(dut.clk)
         inner_ctr += 1
@@ -111,11 +118,6 @@ async def speed_sensor(dut):
         # Wait this many cycles
         for _ in range(delay):
             await RisingEdge(dut.clk)
-
-        if delay < MAX_ENCODER_INTERVAL:
-            dut._log.warning(
-                "delay: %d cycles, motor speed: %.3f" % (delay, motor_speed)
-            )
 
         ts_ctr += delay
 

@@ -4,15 +4,15 @@ use ieee.numeric_std.all;
 
 entity self_test_unit is
     generic (
-        DATA_WIDTH      : integer := 8;             -- data width in bits
-        ADDR_WIDTH      : integer := 6;             -- address width in bits
-        MASTER_LIMIT    : integer := 5_000;    -- master limit value (2 Hz - use reasonable values in simulations)
-        SLAVE_LIMIT     : integer := 6;             -- slave limit value (0.5 s * 6 = 3 seconds)
-        DISP_LIMIT      : integer := 100;      -- display limit value (200 Hz, interlaced)
+        DATA_WIDTH      : integer := 8;                 -- data width in bits
+        ADDR_WIDTH      : integer := 6;                 -- address width in bits
+        MASTER_LIMIT    : integer := 50_000_000;        -- master limit value (2 Hz - use reasonable values in simulations)
+        SLAVE_LIMIT     : integer := 6;                 -- slave limit value (0.5 s * 6 = 3 seconds)
+        DISP_LIMIT      : integer := MASTER_LIMIT / 50; -- display limit value (200 Hz, interlaced)
 
-        MIN_OFF         : std_ulogic_vector(19 downto 0) := x"0000A";
-        MIN_ON          : std_ulogic_vector(19 downto 0) := x"0000A";
-        MAX_ON          : std_ulogic_vector(19 downto 0) := x"000C8"
+        MIN_OFF         : std_ulogic_vector(19 downto 0) := x"000FF";
+        MIN_ON          : std_ulogic_vector(19 downto 0) := x"00FF0";
+        MAX_ON          : std_ulogic_vector(19 downto 0) := x"FFF00"
     );
 
     port (
@@ -37,10 +37,6 @@ architecture structural of self_test_unit is
     signal in_bus, dec_bus  : std_ulogic_vector(1 downto 0);
     signal v_bus            : signed(7 downto 0);
     signal abs_v            : std_ulogic_vector(7 downto 0);
-
-    signal data_in_i        : std_logic_vector(DATA_WIDTH-1 downto 0);
-    signal addr_i           : unsigned(ADDR_WIDTH-1 downto 0);
-    signal we_i             : std_ulogic;
 
     function calc_abs(x : signed) return std_ulogic_vector is
     begin
@@ -82,10 +78,7 @@ begin
             reset => reset,
             duty_cycle => seq,
             done => done,
-            hb => hb,
-            data_in => data_in_i,
-            addr => addr_i,
-            we => we_i
+            hb => hb
         );
     
     out_sync: entity work.synch(rtl)
@@ -122,7 +115,7 @@ begin
     
     vr: entity work.velocity_reader(rtl)
         generic map (
-            TEN_MS_COUNT => 100
+            TEN_MS_COUNT => DISP_LIMIT
         )
 
         port map (
@@ -152,9 +145,4 @@ begin
     -- of velocity magnitude
     abs_v <= calc_abs(v_bus);
     pulse <= dec_bus;
-
-    -- tie off sideloading ports
-    data_in_i <= (others => '0');
-    addr_i <= (others => '0');
-    we_i <= '0';
 end architecture structural;

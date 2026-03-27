@@ -17,8 +17,6 @@ async def main_test(dut):
 
     # Assert reset
     dut.reset.value = 1
-    dut.data_in.value = 0
-    dut.addr.value = 0
 
     # Start clock
     dut._log.info("Starting clock with period %d %s..." % (CLOCK_PERIOD, TIME_UNIT))
@@ -27,20 +25,6 @@ async def main_test(dut):
     # Hold reset for two cycles, then de-assert it
     await Timer(2 * CLOCK_PERIOD, unit=TIME_UNIT)
     dut.reset.value = 0
-
-    # Populate ROM (holding the main execution processes)
-    dut._log.info("Populating ROM...")
-    with open("../src/rom/self_test_rom.hex") as f:
-        lines = [int(line.strip(), 16) for line in f if line.strip()]
-
-    for i, val in enumerate(lines):
-        await RisingEdge(dut.clk)
-        dut.we.value = 1
-        dut.addr.value = i
-        dut.data_in.value = val
-
-    await RisingEdge(dut.clk)
-    dut.we.value = 0
 
     # Wait...
     dut._log.info("Applying stored sequence...")
