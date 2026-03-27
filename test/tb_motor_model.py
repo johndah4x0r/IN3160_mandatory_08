@@ -17,6 +17,7 @@ import cocotb
 from cocotb.triggers import RisingEdge, Timer
 from cocotb.clock import Clock
 
+# Clock properties
 TIME_UNIT = "ns"
 CLOCK_PERIOD = 10
 
@@ -38,12 +39,37 @@ motor_speed = 0
 ts_ctr = 0
 
 
+async def doc_state(dut):
+    """Document current state"""
+    global TS_LIMIT, motor_speed, ts_ctr
+
+    f = open("motor_model_state.csv", "w+")
+    f.write("'index','cycle','dir','en','motor_speed'\n")
+
+    inner_ctr = 0
+    while ts_ctr < TS_LIMIT:
+        v_dir, v_en = 0, 0
+
+        try:
+            v_dir, v_en = int(dut.dir.value), int(dut.en.value)
+        except:
+            pass
+
+        f.write("%d,%d,%d,%d,%.6f\n" % (inner_ctr, ts_ctr, v_dir, v_en, motor_speed))
+
+        await RisingEdge(dut.clk)
+        inner_ctr += 1
+
+    f.sync()
+    f.close()
+
+
 async def motor_model(dut):
     """Implement a motor model"""
     global TS_LIMIT, motor_speed
     has_warned = False
 
-    while True:
+    while ts_ctr < TS_LIMIT:
         # Trigger at master clock edge
         await RisingEdge(dut.clk)
 
@@ -87,7 +113,9 @@ async def speed_sensor(dut):
             await RisingEdge(dut.clk)
 
         if delay < MAX_ENCODER_INTERVAL:
-            dut._log.warning("delay: %d cycles, motor speed: %.3f" % (delay, motor_speed))
+            dut._log.warning(
+                "delay: %d cycles, motor speed: %.3f" % (delay, motor_speed)
+            )
 
         ts_ctr += delay
 
@@ -120,6 +148,9 @@ async def main_test(dut):
     dut.reset.value = 0
 
     await RisingEdge(dut.clk)
+
+    dut._log.info("Starting data logger...")
+    cocotb.start_soon(doc_state(dut))
 
     dut._log.info("Starting motor model...")
     cocotb.start_soon(motor_model(dut))
