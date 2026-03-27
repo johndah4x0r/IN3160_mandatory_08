@@ -6,7 +6,6 @@ use std.textio.all;
 
 entity self_test is
     generic (
-        SIM_MODE            : boolean := true;          -- simulation mode
         DATA_WIDTH          : integer := 8;             -- data width in bits
         ADDR_WIDTH          : integer := 6;             -- address width in bits (vestigial)
         MASTER_LIMIT        : integer := 5;             -- master limit value (use reasonable values in simulations)
@@ -31,7 +30,6 @@ architecture rtl of self_test is
     impure function init_rom(hex_name : in string) return rom_type is
         FILE hex_file       : text;
         variable rom_line   : line;
-        variable char       : unsigned(7 downto 0);
         variable gen_rom    : rom_type := (others => (others => '0'));
         variable index      : integer := 0;
     begin

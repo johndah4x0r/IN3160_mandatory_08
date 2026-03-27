@@ -7,7 +7,7 @@ entity self_test_unit is
         DATA_WIDTH      : integer := 8;                 -- data width in bits
         ADDR_WIDTH      : integer := 6;                 -- address width in bits
         MASTER_LIMIT    : integer := 50_000_000;        -- master limit value (2 Hz - use reasonable values in simulations)
-        SLAVE_LIMIT     : integer := 6;                 -- slave limit value (0.5 s * 6 = 3 seconds)
+        SLAVE_LIMIT     : integer := 2;                 -- slave limit value (0.5 s * 2 = 1 seconds)
         DISP_LIMIT      : integer := MASTER_LIMIT / 50; -- display limit value (200 Hz, interlaced)
 
         MIN_OFF         : std_ulogic_vector(19 downto 0) := x"000FF";
@@ -27,6 +27,9 @@ entity self_test_unit is
         c               : out std_ulogic;
 
         -- ports to view pulses
+        -- synthesis translate_off
+        velocity        : out signed(7 downto 0);
+        -- synthesis translate_on
         pulse           : out std_ulogic_vector(1 downto 0)
     );
 end entity self_test_unit;
@@ -40,7 +43,7 @@ architecture structural of self_test_unit is
 
     function calc_abs(x : signed) return std_ulogic_vector is
     begin
-        if x < 0 then
+        if x(x'left) = '1' then
             return std_ulogic_vector((not x) + 1);
         else
             return std_ulogic_vector(x);
@@ -66,7 +69,6 @@ begin
     
     seq_gen: entity work.self_test(rtl)
         generic map (
-            SIM_MODE => false,
             DATA_WIDTH => DATA_WIDTH,
             ADDR_WIDTH => ADDR_WIDTH,
             MASTER_LIMIT => MASTER_LIMIT,
@@ -145,4 +147,7 @@ begin
     -- of velocity magnitude
     abs_v <= calc_abs(v_bus);
     pulse <= dec_bus;
+    -- synthesis translate_off
+    velocity <= v_bus;
+    -- synthesis translate_on
 end architecture structural;

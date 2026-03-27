@@ -20,6 +20,7 @@ architecture behavioral of pulse_width_modulator is
     signal abs_duty     : std_ulogic_vector(19 downto 0) := (others => '0');
     signal gen_pulse    : std_ulogic := '0';
     signal unused       : std_ulogic;
+    signal req_dir      : std_ulogic;
 
     type pwm_state_t is (REVERSE_IDLE, REVERSE, FORWARD_IDLE, FORWARD);
     signal pwm_state, next_pwm_state : pwm_state_t;
@@ -28,7 +29,7 @@ architecture behavioral of pulse_width_modulator is
 
     function calc_abs(x : signed) return std_ulogic_vector is
     begin
-        if x < 0 then
+        if x(x'left) = '1' then
             return std_ulogic_vector((not x) + 1);
         else
             return std_ulogic_vector(x);
@@ -63,7 +64,7 @@ begin
         end if;
     end process;
 
-    inner: process(pwm_state, duty_cycle)
+    inner: process(pwm_state, req_dir)
     begin
         -- make sure `next_pwm_state` isn't left undefined
         next_pwm_state <= pwm_state;
@@ -73,19 +74,21 @@ begin
         -- state must be entered)
         case pwm_state is
             when REVERSE_IDLE =>
-                next_pwm_state <= REVERSE when duty_cycle < 0 else FORWARD_IDLE;
+                next_pwm_state <= REVERSE when req_dir = '0' else FORWARD_IDLE;
             when REVERSE =>
-                next_pwm_state <= REVERSE when duty_cycle < 0 else REVERSE_IDLE;
+                next_pwm_state <= REVERSE when req_dir = '0' else REVERSE_IDLE;
             when FORWARD_IDLE =>
-                next_pwm_state <= FORWARD when duty_cycle > 0 else REVERSE_IDLE;
+                next_pwm_state <= FORWARD when req_dir = '1' else REVERSE_IDLE;
             when FORWARD =>
-                next_pwm_state <= FORWARD when duty_cycle > 0 else FORWARD_IDLE;
+                next_pwm_state <= FORWARD when req_dir = '1' else FORWARD_IDLE;
         end case;
     end process;
 
     -- (calculation of duty cycle is combinational)
     abs_duty_calc <= calc_abs(duty_cycle);
     abs_duty <= abs_duty_calc(6 downto 0) & "0000000000000";
+    req_dir <= not duty_cycle(duty_cycle'left);
+
 
     -- apply Moore outputs
     en <= gen_pulse when (pwm_state = REVERSE or pwm_state = FORWARD) else '0';

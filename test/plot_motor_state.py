@@ -30,7 +30,7 @@ with open(FILENAME, "r") as db:
 
 # Calculate signed ENABLE and signed velocity
 s_signed_en = [e if d else -e for d, e in zip(s_dir, s_en)]
-s_velocity = [v if v < 128 else v-256 for v in s_velocity]
+s_velocity = [v if v < 128 else v - 256 for v in s_velocity]
 
 plt.plot(n_index, s_signed_en, label="Signed ENABLE")
 plt.plot(n_index, s_motor_speed, label="Motor speed")

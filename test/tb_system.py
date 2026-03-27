@@ -22,7 +22,7 @@ TIME_UNIT = "ns"
 CLOCK_PERIOD = 10
 
 # Time-stamp limit (in cycles)
-TS_LIMIT = 250_000
+TS_LIMIT = 512_000
 
 # Motor physical parameters
 DRAG_COEFF = 0.001
@@ -39,11 +39,9 @@ motor_speed = 0
 ts_ctr = 0
 
 
-async def doc_state(dut):
+async def doc_state(dut, f):
     """Document current state"""
     global TS_LIMIT, motor_speed, ts_ctr
-
-    f = open("motor_model_state.csv", "w+")
     f.write("'index','cycle','dir','en','velocity','motor_speed'\n")
 
     inner_ctr = 0
@@ -54,7 +52,7 @@ async def doc_state(dut):
             v_dir, v_en, v_velocity = (
                 int(dut.dir.value),
                 int(dut.en.value),
-                int(dut.v_bus.value),
+                int(dut.velocity.value),
             )
         except:
             pass
@@ -66,9 +64,6 @@ async def doc_state(dut):
 
         await RisingEdge(dut.clk)
         inner_ctr += 1
-
-    f.sync()
-    f.close()
 
 
 async def motor_model(dut):
@@ -134,6 +129,8 @@ async def speed_sensor(dut):
 @cocotb.test()
 async def main_test(dut):
     """Try accessing the design."""
+    # Open log file
+    f = open("motor_model_state.csv", "w+")
 
     dut._log.info("Running test...")
 
@@ -152,7 +149,7 @@ async def main_test(dut):
     await RisingEdge(dut.clk)
 
     dut._log.info("Starting data logger...")
-    cocotb.start_soon(doc_state(dut))
+    cocotb.start_soon(doc_state(dut, f))
 
     dut._log.info("Starting motor model...")
     cocotb.start_soon(motor_model(dut))
@@ -161,3 +158,6 @@ async def main_test(dut):
     await cocotb.start_soon(speed_sensor(dut))
 
     dut._log.info("Running test...done")
+
+    f.flush()
+    f.close()
